@@ -1,44 +1,38 @@
-import os
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn
 
 class Downloader:
-    def __init__(self, dest_dir: str, max_workers: int = 10):
-        self.dest_dir = Path(dest_dir)
-        self.max_workers = max_workers
-        self.dest_dir.mkdir(parents=True, exist_ok=True)
+    def __init__(self, dest: str, threads: int = 10):
+        self.dest = Path(dest)
+        self.threads = threads
+        self.dest.mkdir(parents=True, exist_ok=True)
 
-    def _download_single(self, url: str) -> bool:
-        """Download a single file helper."""
+    def _fetch(self, url: str) -> bool:
         try:
-            # Extract filename from URL
-            filename = url.split('/')[-1]
-            if '?' in filename:
-                filename = filename.split('?')[0]
+            name = url.split('/')[-1]
+            if '?' in name:
+                name = name.split('?')[0]
             
-            if not filename:
+            if not name:
                 return False
 
-            filepath = self.dest_dir / filename
+            fp = self.dest / name
             
-            # Skip if already exists
-            if filepath.exists():
+            if fp.exists():
                 return True
                 
-            response = requests.get(url, timeout=15)
-            response.raise_for_status()
+            res = requests.get(url, timeout=15)
+            res.raise_for_status()
             
-            with open(filepath, 'wb') as f:
-                f.write(response.content)
+            with open(fp, 'wb') as f:
+                f.write(res.content)
             return True
-        except Exception as e:
-            # Silent fail allows the progress bar to continue, but ideally we'd log errors
+        except Exception:
             return False
 
-    def download_images(self, urls: list[str]):
-        """Download multiple images in parallel with a progress bar."""
+    def run(self, urls: list[str]):
         if not urls:
             return
 
@@ -47,13 +41,11 @@ class Downloader:
             TextColumn("[progress.description]{task.description}"),
             BarColumn(),
             TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-        ) as progress:
-            task = progress.add_task(f"[bold pink1]Downloading {len(urls)} Catgirls...", total=len(urls))
+        ) as prog:
+            task = prog.add_task(f"[bold pink1]Downloading {len(urls)} files...", total=len(urls))
             
-            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                # Submit all tasks
-                futures = [executor.submit(self._download_single, url) for url in urls]
+            with ThreadPoolExecutor(max_workers=self.threads) as exe:
+                futs = [exe.submit(self._fetch, url) for url in urls]
                 
-                # As they complete, update progress
-                for _ in as_completed(futures):
-                    progress.advance(task)
+                for _ in as_completed(futs):
+                    prog.advance(task)
