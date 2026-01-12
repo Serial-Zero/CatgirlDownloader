@@ -1,12 +1,14 @@
 # Catgirl Downloader
 
-A clean, modular Python script to download high-quality catgirl images using the [nekos.best](https://nekos.best) API.
+A clean, modular Python script to download high-quality catgirl (and other) images. Now featuring an interactive CLI, SFW & NSFW modes, and automatic organization.
 
-## Structure
-This project follows a standard Google-style Python project structure:
-- `src/`: Source code package
-- `tests/`: Unit tests (placeholder)
-- `requirements.txt`: Dependencies
+## Features
+- **Interactive CLI**: Easy-to-use menu system driven by `questionary`.
+- **Dual Modes**: 
+  - **SFW**: Neko, Kitsune, Waifu, Maid, Husbando.
+  - **NSFW**: Waifu, Maid, Ass, Hentai, Milf, Oral, Paizuri, Ecchi, Ero.
+- **Smart Sorting**: Images are automatically saved to `downloads/{mode}/{category}/`.
+- **Multi-API Support**: seamlessly integrates **[nekos.best](https://nekos.best)** and **[waifu.im](https://waifu.im)**.
 
 ## Installation
 
@@ -17,15 +19,30 @@ This project follows a standard Google-style Python project structure:
 
 ## Usage
 
-Run the downloader module:
+Simply run the module to start the interactive wizard:
 
 ```bash
-python -m src.catgirl_downloader.main --amount 20 --output my_catgirls
+python -m src.catgirl_downloader.main
 ```
 
-### Options
-- `--amount` / `-n`: Number of images to download (default: 10)
-- `--output` / `-o`: Output directory (default: `downloads`)
+Follow the on-screen prompts:
+1. **Select Mode**: Choose between SFW or NSFW.
+2. **Select Category**: Browse available categories for your chosen mode.
+3. **Amount**: Enter how many images you want.
+4. **Output Directory**: Choose a base folder (default is `downloads`).
+
+### Directory Structure
+The tool organizes downloads automatically:
+```
+downloads/
+├── sfw/
+│   ├── neko/
+│   └── waifu/
+└── nsfw/
+    ├── hentai/
+    └── ass/
+```
 
 ## APIs Used
-- **Nekos.best API**: High quality, SFW catgirl images.
+- **Nekos.best API**: Primary source for SFW Nekos and Kitsunes.
+- **Waifu.im API**: Powers NSFW content and additional SFW categories.
