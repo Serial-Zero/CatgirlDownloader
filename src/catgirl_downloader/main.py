@@ -2,12 +2,13 @@ import click
 import questionary
 from rich.console import Console
 from rich.panel import Panel
-from .api import Nekos, Waifu
+from .api import Manager
 from .downloader import Downloader
 import os
 from pathlib import Path
 
 console = Console()
+api = Manager()
 
 def menu():
     console.print(Panel.fit("[bold pink1]Welcome to Catgirl Downloader[/bold pink1]", border_style="pink1"))
@@ -25,22 +26,16 @@ def menu():
             
         is_nsfw = "NSFW" in mode
 
-        if is_nsfw:
-            opts = ["Waifu", "Maid", "Ass", "Hentai", "Milf", "Oral", "Paizuri", "Ecchi", "Ero"]
-        else:
-            opts = ["Neko", "Kitsune", "Waifu", "Maid", "Husbando"]
-            
+        opts = api.get_opts(is_nsfw)
         opts.append("Back")
 
-        cat = questionary.select("What would you like to download?", choices=opts).ask()
+        cat = questionary.select("What type?", choices=opts).ask()
 
         if not cat or cat == "Back":
             continue
 
-        raw = cat
-        
         limit_str = questionary.text(
-            f"How many {raw} images?",
+            f"How many {cat} images?",
             default="10",
             validate=lambda x: x.isdigit() and int(x) > 0 or "Positive integer required."
         ).ask()
@@ -56,30 +51,18 @@ def menu():
         if not dest: continue
         
         sub = "nsfw" if is_nsfw else "sfw"
-        out = Path(dest) / sub / raw.lower()
+        out = Path(dest) / sub / cat.lower()
 
         if questionary.confirm(f"Download {limit} images to '{out}'?").ask():
-            process(limit, str(out), raw, is_nsfw)
+            process(limit, str(out), cat, is_nsfw)
         
         if not questionary.confirm("Download more?").ask():
             console.print("[yellow]See you next time![/yellow]")
             break
 
 def process(limit, out, cat, nsfw):
-    slug = cat.lower()
-    sfw_nekos = ["neko", "kitsune", "husbando"]
-    
-    if not nsfw and slug in sfw_nekos:
-        prov = Nekos()
-        name = "Nekos.best"
-        tag = slug
-    else:
-        prov = Waifu()
-        name = "Waifu.im"
-        tag = slug
-    
-    with console.status(f"[bold cyan]Fetching metadata from {name}...[/bold cyan]"):
-        urls = prov.fetch(limit, cat=tag, nsfw=nsfw)
+    with console.status(f"[bold cyan]Fetching metadata...[/bold cyan]"):
+        urls = api.get_urls(cat, nsfw, limit)
     
     if not urls:
         console.print("[bold red]Error:[/bold red] No URLs found.")
